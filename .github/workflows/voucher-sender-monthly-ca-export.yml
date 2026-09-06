@@ -1,0 +1,31 @@
+name: voucher-sender (monthly CA export)
+
+# Emails the previous month's vouchers to the CA once the month has closed.
+# Runs on the 5th (IST) rather than the 1st, so late-arriving invoices from
+# the tail end of the previous month have a few days' buffer.
+
+on:
+  schedule:
+    - cron: "0 21 4 * *"   # 21:00 UTC on the 4th = 2:30 AM IST on the 5th
+  workflow_dispatch: {}     # useful for re-running a specific month by hand if needed
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install dependencies
+        run: pip install -r apps/voucher-sender/requirements.txt
+      - name: Run monthly CA export
+        working-directory: apps/voucher-sender
+        run: python monthly_ca_export.py
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          CA_EMAIL_ADDRESS: ${{ secrets.CA_EMAIL_ADDRESS }}
+          GOOGLE_OAUTH_CLIENT_ID: ${{ secrets.GOOGLE_OAUTH_CLIENT_ID }}
+          GOOGLE_OAUTH_CLIENT_SECRET: ${{ secrets.GOOGLE_OAUTH_CLIENT_SECRET }}
+          GOOGLE_OAUTH_REFRESH_TOKEN: ${{ secrets.GOOGLE_OAUTH_REFRESH_TOKEN }}

@@ -1,0 +1,29 @@
+name: voucher-generator (nightly)
+
+# Runs after sales-ingest -- see sales-ingest-nightly.yml's header comment
+# for why this lives on GitHub Actions rather than a Render Cron Job.
+
+on:
+  schedule:
+    - cron: "15 20 * * *"   # 20:15 UTC = 1:45 AM IST, nightly (15 min after sales-ingest)
+  workflow_dispatch: {}
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install dependencies
+        run: pip install -r apps/voucher-generator/requirements.txt
+      - name: Run voucher-generator
+        working-directory: apps/voucher-generator
+        run: python main.py
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          # PDFSERVICE_URL not set here -- pdfservice_client.py already
+          # defaults to https://founder-panel.onrender.com. Only add a
+          # PDFSERVICE_URL secret/variable if that URL ever changes.

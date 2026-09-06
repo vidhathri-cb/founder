@@ -1,0 +1,27 @@
+name: voucher-sender (nightly WhatsApp dry-run)
+
+# Runs after voucher-generator. Stays SEND_MODE=DRY_RUN (the code's own
+# default) until the WhatsApp Business API is actually connected -- see
+# apps/voucher-sender/README.md's reminder.
+
+on:
+  schedule:
+    - cron: "30 20 * * *"   # 20:30 UTC = 2:00 AM IST, nightly
+  workflow_dispatch: {}
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install dependencies
+        run: pip install -r apps/voucher-sender/requirements.txt
+      - name: Run voucher-sender (WhatsApp dry-run)
+        working-directory: apps/voucher-sender
+        run: python main.py
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
