@@ -1,0 +1,6 @@
+fastapi
+uvicorn
+pydantic
+reportlab
+google-auth
+google-api-python-client
