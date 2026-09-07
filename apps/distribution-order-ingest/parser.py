@@ -9,6 +9,7 @@ in isolation.
 """
 
 import re
+from datetime import datetime
 from decimal import Decimal, ROUND_HALF_UP
 
 # GST rate is 5% for all SKUs currently (2.5% CGST + 2.5% SGST), per
@@ -36,6 +37,25 @@ def _clean_amount(raw: str) -> Decimal:
 
 def _round2(value: Decimal) -> Decimal:
     return value.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+
+
+def normalize_date(raw_date: str) -> str:
+    """
+    The business writes dates as DD/MM/YYYY (e.g. "25/08/2026"). Postgres's
+    default datestyle reads an ambiguous slash-separated date as month-first,
+    so "25/08/2026" fails as "date/time field value out of range" (month 25
+    doesn't exist) rather than silently being misread as the wrong day --
+    caught for real 2026-09-07, on the first live write this code ever made.
+    Converting to unambiguous ISO 8601 (YYYY-MM-DD) here, once, means every
+    downstream table (orders/sales/payments) gets a value Postgres -- and
+    pdfservice, which already expects YYYY-MM-DD when formatting invoice
+    dates -- can't misinterpret.
+    """
+    raw_date = raw_date.strip()
+    try:
+        return datetime.strptime(raw_date, "%d/%m/%Y").date().isoformat()
+    except ValueError:
+        raise MessageParseError(f"Date '{raw_date}' is not in DD/MM/YYYY format")
 
 
 def normalize_sku(raw_sku: str) -> str:
@@ -87,7 +107,7 @@ def parse_message(raw_text: str) -> dict:
     payment_mode = PAYMENT_MODE_MAP.get(payment_mode_raw)  # None if not present in message
 
     return {
-        "date": fields["date"],
+        "date": normalize_date(fields["date"]),
         "shop_name": fields["shop name"],
         "place": fields["place"],
         "phone_number": None if fields.get("phone number", "-") == "-" else fields.get("phone number"),
