@@ -1,0 +1,65 @@
+Date:25/08/2026
+Shop Name:Diana General Stores
+Place:Udupi
+Phone number:-
+SKU:CP-1000ML
+Quantity:3
+Unit Price(incl gst):360
+Total(incl gst):1080 Rs
+Amount Received:1080 Rs
+Bill Whatsapp: No
+---
+Date:25/08/2026
+Shop Name:Venkatrayya Pai and Sons
+Place:Udupi
+Phone number:-
+SKU:CP-500ML
+Quantity:24
+Unit Price(incl gst):180
+Total(incl gst):4320 Rs
+Amount Received:4320 Rs
+Bill Whatsapp: No
+---
+Date:25/08/2026
+Shop Name:Janatha Traders
+Place:Ambagilu
+Phone number:-
+SKU:CP-500ML,CP-1000ML
+Quantity:3,3
+Unit Price(incl gst):180,360
+Total(incl gst):1620 Rs
+Amount Received:1620 Rs
+Bill Whatsapp: No
+---
+Date:25/08/2026
+Shop Name:Chandrakanth Shanbogue
+Place:Kenjoor
+Phone number:-
+SKU:CP-500ML
+Quantity:2
+Unit Price(incl gst):180
+Total(incl gst):360 Rs
+Amount Received:360 Rs
+Bill Whatsapp: No
+---
+Date:25/08/2026
+Shop Name:Namitha General Stores
+Place:Hebri
+Phone number:-
+SKU:CP-1000ML
+Quantity:3
+Unit Price(incl gst):360
+Total(incl gst):1080 Rs
+Amount Received:1080 Rs
+Bill Whatsapp: No
+---
+Date:25/08/2026
+Shop Name:Krishna Traders
+Place:Karje
+Phone number:-
+SKU:CP-1000ML
+Quantity:5
+Unit Price(incl gst):360
+Total(incl gst):1800 Rs
+Amount Received:1800 Rs
+Bill Whatsapp: No

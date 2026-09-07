@@ -1,0 +1,69 @@
+name: distribution-order-ingest (inbox)
+
+# Interim substitute for the WhatsApp webhook (not connected yet, v1.1).
+# Drop a batch of line-sale messages into a NEW file under
+# apps/distribution-order-ingest/inbox/ (e.g. inbox/2026-08-25.txt) and
+# push it -- this workflow runs automatically and ingests every message in
+# that file into Supabase.
+#
+# Only files newly ADDED by a push are processed (via git diff against the
+# previous commit), so pushing again later for an unrelated reason never
+# reprocesses old inbox files. For the same reason: always use a NEW
+# filename for a new batch. Don't edit and re-push an old inbox file --
+# there's no dedupe on these writes, so reprocessing one would create
+# duplicate orders/sales for whatever it already ingested successfully.
+#
+# (Why a file instead of the "Run workflow" form: GitHub's manual dispatch
+# text box is single-line and silently drops newlines on paste, which
+# breaks a multi-field, multi-message format like this one. A real file in
+# a real push doesn't have that problem.)
+
+on:
+  push:
+    paths:
+      - "apps/distribution-order-ingest/inbox/**"
+  workflow_dispatch:
+    inputs:
+      file:
+        description: 'Filename under apps/distribution-order-ingest/inbox/ to (re)process, e.g. 2026-08-25.txt -- only for re-running a specific file by hand'
+        required: true
+        type: string
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install dependencies
+        run: pip install -r apps/distribution-order-ingest/requirements.txt
+
+      - name: Work out which inbox file(s) to ingest
+        id: changed
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "files=${{ inputs.file }}" >> "$GITHUB_OUTPUT"
+          else
+            files=$(git diff --name-only --diff-filter=A "${{ github.event.before }}" "${{ github.event.after }}" -- 'apps/distribution-order-ingest/inbox/*.txt' | xargs -n1 basename | tr '\n' ' ')
+            echo "files=$files" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Ingest
+        working-directory: apps/distribution-order-ingest
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: |
+          FILES="${{ steps.changed.outputs.files }}"
+          if [ -z "$FILES" ]; then
+            echo "No new inbox file(s) in this push -- nothing to do."
+            exit 0
+          fi
+          for fname in $FILES; do
+            echo "=== Ingesting inbox/$fname ==="
+            python ingest_batch.py "inbox/$fname"
+          done
