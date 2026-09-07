@@ -1,0 +1,47 @@
+name: distribution-order-ingest (manual entry)
+
+# Interim substitute for the real WhatsApp Business API webhook (v1.1
+# isn't set up yet). Collect the day's line-sale messages however you're
+# gathering them, then paste all of them here in one go, each in the same
+# labeled-line format the line-sales person would eventually send,
+# separated by a line containing only "---". This writes REAL rows to
+# Supabase (sales.shops/orders/order_items/sales/sale_items/payments) for
+# every message, exactly as each one would if it arrived live. One bad
+# message in the batch does not block the others -- see
+# apps/distribution-order-ingest/README.md for the exact per-message
+# format and field rules.
+#
+# No schedule on this one -- it only ever runs when you trigger it by hand
+# from the Actions tab (Run workflow), whenever you have a batch of
+# messages ready to enter.
+
+on:
+  workflow_dispatch:
+    inputs:
+      messages:
+        description: 'Paste one or more line-sale messages (Date/Shop Name/Place/Phone number/SKU/Quantity/Unit Price/Total/Amount Received/Bill Whatsapp/Payment Mode). Separate multiple messages with a line containing only ---'
+        required: true
+        type: string
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install dependencies
+        run: pip install -r apps/distribution-order-ingest/requirements.txt
+      - name: Ingest the pasted messages
+        working-directory: apps/distribution-order-ingest
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          MESSAGES: ${{ inputs.messages }}
+        run: |
+          printf '%s\n' "$MESSAGES" > messages.txt
+          echo "--- messages as received ---"
+          cat messages.txt
+          echo "-----------------------------"
+          python ingest_batch.py messages.txt
